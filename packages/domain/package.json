@@ -1,0 +1,33 @@
+{
+  "name": "@mcp-saas-starter/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "dotenv": "^18.0.3",
+    "typescript": "^5.9.2",
+    "vitest": "^5.0.1"
+  },
+  "dependencies": {
+    "@mcp-saas-starter/auth": "workspace:*",
+    "@mcp-saas-starter/authorization": "workspace:*",
+    "@mcp-saas-starter/database": "workspace:*",
+    "@mcp-saas-starter/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.117.0"
+  }
+}

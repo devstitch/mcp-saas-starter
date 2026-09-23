@@ -1,0 +1,33 @@
+{
+  "name": "@mcp-saas-starter/mcp-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src/",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@mcp-saas-starter/audit": "workspace:*",
+    "@mcp-saas-starter/auth": "workspace:*",
+    "@mcp-saas-starter/authorization": "workspace:*",
+    "@mcp-saas-starter/database": "workspace:*",
+    "@mcp-saas-starter/domain": "workspace:*",
+    "@mcp-saas-starter/rate-limit": "workspace:*",
+    "@mcp-saas-starter/shared": "workspace:*",
+    "@modelcontextprotocol/express": "2.0.0",
+    "@modelcontextprotocol/node": "2.0.0",
+    "@modelcontextprotocol/server": "2.0.0",
+    "dotenv": "^18.0.3",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.18.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}

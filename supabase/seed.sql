@@ -1,0 +1,26 @@
+-- Demo seed data for MCP SaaS Starter (Prompt 4)
+--
+-- This repo does NOT use the Supabase CLI.
+-- Auth users cannot be created with plain SQL alone, so seeding is done via:
+--
+--   pnpm db:seed
+--
+-- That runs packages/database/seed/seed.ts against your project using
+-- SUPABASE_URL + SUPABASE_SECRET_KEY from .env.local.
+--
+-- Idempotent: safe to re-run. Demo projects/tasks for Acme + Globex are replaced.
+--
+-- Demo password (all users): Password123!
+--
+-- Users created:
+--   admin@acme.example.com     admin   @ Acme Inc
+--   member@acme.example.com    member  @ Acme Inc
+--   viewer@acme.example.com    viewer  @ Acme Inc
+--   admin@globex.example.com   admin   @ Globex Corp
+--   member@globex.example.com  member  @ Globex Corp
+--
+-- Data shape (created by the TypeScript seed, not this SQL file):
+--   organizations: Acme Inc, Globex Corp
+--   4 projects per org (active / on_hold / completed / archived)
+--   8 tasks per project (mixed status, some unassigned)
+--   No protected_actions or mcp_audit_events (created at runtime)
