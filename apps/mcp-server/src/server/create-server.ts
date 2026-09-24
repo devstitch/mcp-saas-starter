@@ -8,7 +8,9 @@ import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node';
 import type { OAuthMetadata } from '@modelcontextprotocol/server';
 import type { Express, NextFunction, Request, Response } from 'express';
 import { createSupabaseClient } from '@mcp-saas-starter/database';
-import { ToolInputError } from '@mcp-saas-starter/shared';
+import { createAuditSink, type AuditSink } from '@mcp-saas-starter/audit';
+import { createRateLimiter, type RateLimiter } from '@mcp-saas-starter/rate-limit';
+import { UnauthenticatedError } from '@mcp-saas-starter/shared';
 import { createSupabaseTokenVerifier } from '../auth/verify-access-token.js';
 import {
   allowedServerHostnames,
@@ -17,18 +19,22 @@ import {
   requireSupabaseUrl,
 } from '../env.js';
 import { audit } from '../middleware/audit.js';
-import { authenticate, RequestAuthError, type McpAuthContext } from '../middleware/authenticate.js';
+import { authenticate, type McpAuthContext } from '../middleware/authenticate.js';
 import { authorize } from '../middleware/authorize.js';
-import { rateLimit } from '../middleware/rate-limit.js';
+import { enforceRateLimit } from '../middleware/rate-limit.js';
 import { validate } from '../middleware/validate.js';
 import { resources } from '../resources/index.js';
 import { tools } from '../tools/index.js';
+import { toClientError } from './errors.js';
 import { createMcpServer } from './create-mcp-server.js';
 
 declare global {
+  // Express augments Request through the Express namespace.
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       mcpContext?: McpAuthContext;
+      mcpAudit?: AuditSink;
     }
   }
 }
@@ -38,6 +44,7 @@ export type CreateAppConfig = {
   supabasePublishableKey: string;
   mcpServerUrl: string;
   oauthMetadata: OAuthMetadata;
+  rateLimiter?: RateLimiter;
 };
 
 /**
@@ -70,6 +77,8 @@ export function createApp(config: CreateAppConfig): Express {
     });
   });
 
+  const rateLimiter = config.rateLimiter ?? createRateLimiter();
+
   const bearerAuth = requireBearerAuth({
     verifier: createSupabaseTokenVerifier({
       supabaseUrl: config.supabaseUrl,
@@ -84,13 +93,15 @@ export function createApp(config: CreateAppConfig): Express {
         await validate(req);
         await authenticate(req);
         await authorize(req);
-        await rateLimit(req);
+        await enforceRateLimit(req, rateLimiter);
 
         const auth = req.mcpContext;
         if (!auth) {
-          throw new RequestAuthError(401, 'invalid_token', 'Missing access token.');
+          throw new UnauthenticatedError('Missing access token.');
         }
 
+        const mcpAudit = createAuditSink();
+        req.mcpAudit = mcpAudit;
         const server = createMcpServer({
           client: createSupabaseClient(requireSupabaseUrl(), requireSupabasePublishableKey(), {
             accessToken: auth.accessToken,
@@ -100,6 +111,7 @@ export function createApp(config: CreateAppConfig): Express {
             organizationId: auth.organizationId,
             role: auth.role,
           },
+          audit: mcpAudit,
         });
         const transport = new NodeStreamableHTTPServerTransport({
           sessionIdGenerator: undefined,
@@ -117,36 +129,23 @@ export function createApp(config: CreateAppConfig): Express {
           next(error);
           return;
         }
-        if (error instanceof ToolInputError) {
-          res.status(400).json({
-            error: 'invalid_params',
-            error_description: error.message,
-            details: error.issues,
-          });
-          return;
+        const clientError = toClientError(error);
+        if (clientError.headers) {
+          for (const [name, value] of Object.entries(clientError.headers)) {
+            res.setHeader(name, value);
+          }
         }
-        if (error instanceof RequestAuthError) {
-          res.status(error.status).json({
-            error: error.code,
-            error_description: error.message,
-          });
-          return;
-        }
-        console.error(error instanceof Error ? error.message : 'MCP request failed');
-        res.status(500).json({
-          error: 'server_error',
-          error_description: 'Internal server error',
-        });
+        res.status(clientError.status).json(clientError.body);
       }
     })();
   });
 
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    void _req;
+    void _next;
     if (res.headersSent) return;
     const parseError =
-      err instanceof SyntaxError &&
-      'status' in err &&
-      (err as { status?: number }).status === 400;
+      err instanceof SyntaxError && 'status' in err && (err as { status?: number }).status === 400;
     if (parseError) {
       res.status(400).json({
         error: 'invalid_request',
@@ -155,10 +154,8 @@ export function createApp(config: CreateAppConfig): Express {
       return;
     }
     console.error(err instanceof Error ? err.message : 'Unhandled error');
-    res.status(500).json({
-      error: 'server_error',
-      error_description: 'Internal server error',
-    });
+    const clientError = toClientError(err);
+    res.status(clientError.status).json(clientError.body);
   });
 
   return app;

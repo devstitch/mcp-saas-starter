@@ -6,32 +6,25 @@ Project Type: Open-source reference architecture
 Repository: devstitch/mcp-saas-starter
 License: MIT
 Status: V1 Planning
+
 1. Product Summary
-DevStitch MCP SaaS Starter is an open-source reference architecture demonstrating how an existing multi-tenant SaaS application can securely expose its product capabilities to AI agents and MCP-compatible clients.
-The project should answer a practical SaaS founder/engineering question:
-“How can I make my existing SaaS usable by AI agents through MCP without rebuilding my application or compromising authentication, permissions, tenant isolation, or auditability?”
-The starter will include a deliberately small project/task-management SaaS as the example application. The SaaS itself is not the product; its purpose is to demonstrate the reusable MCP integration architecture.
+   DevStitch MCP SaaS Starter is an open-source reference architecture demonstrating how an existing multi-tenant SaaS application can securely expose its product capabilities to AI agents and MCP-compatible clients.
+   The project should answer a practical SaaS founder/engineering question:
+   “How can I make my existing SaaS usable by AI agents through MCP without rebuilding my application or compromising authentication, permissions, tenant isolation, or auditability?”
+   The starter will include a deliberately small project/task-management SaaS as the example application. The SaaS itself is not the product; its purpose is to demonstrate the reusable MCP integration architecture.
 2. Primary Goals
-The project should demonstrate how to:
-1.
-Add a remote MCP server to an existing SaaS.
-2.
-Authenticate MCP users using the SaaS's existing user accounts.
+   The project should demonstrate how to:
 3.
-Preserve organization/tenant boundaries.
-4.
-Apply existing role-based permissions to MCP tool calls.
-5.
-Expose read and write SaaS functionality as MCP tools.
-6.
-Protect sensitive/destructive actions.
-7.
-Validate all agent-provided inputs.
-8.
-Rate-limit MCP usage.
-9.
-Produce a complete audit trail of MCP activity.
-10.
+
+Add a remote MCP server to an existing SaaS. 2.
+Authenticate MCP users using the SaaS's existing user accounts. 3.
+Preserve organization/tenant boundaries. 4.
+Apply existing role-based permissions to MCP tool calls. 5.
+Expose read and write SaaS functionality as MCP tools. 6.
+Protect sensitive/destructive actions. 7.
+Validate all agent-provided inputs. 8.
+Rate-limit MCP usage. 9.
+Produce a complete audit trail of MCP activity. 10.
 Deploy the MCP layer separately without duplicating core SaaS business logic.
 The project should be useful both as:
 
@@ -39,8 +32,7 @@ a learning/reference project for developers;
 
 a starting architecture for SaaS teams adding MCP;
 
-a technical proof asset demonstrating DevStitch's AI-native SaaS engineering capabilities.
-3. Target Audience
+a technical proof asset demonstrating DevStitch's AI-native SaaS engineering capabilities. 3. Target Audience
 Primary
 B1 — Bootstrapped SaaS founders
 Founders who already have a SaaS/MVP and want to make their product accessible to ChatGPT, Claude, Cursor, agents, or other MCP-compatible systems.
@@ -59,8 +51,7 @@ AI engineers
 
 Technical founders
 
-Product engineering teams
-4. Core Positioning
+Product engineering teams 4. Core Positioning
 Recommended GitHub headline
 Add a secure MCP interface to your existing SaaS.
 Production-oriented TypeScript reference architecture for connecting AI agents to a multi-tenant SaaS using authentication, permissions, RLS, audit logging, validation, rate limiting, and protected actions.
@@ -78,8 +69,7 @@ an autonomous agent framework;
 a full project-management product;
 
 an abstraction replacing the official MCP SDK.
-The official TypeScript MCP SDK should remain the underlying MCP implementation.
-5. Technical Baseline
+The official TypeScript MCP SDK should remain the underlying MCP implementation. 5. Technical Baseline
 Use the current MCP TypeScript SDK v2 and target the current MCP specification generation.
 MCP SDK v2 is the stable TypeScript SDK line implementing the 2026-07-28 specification. (https://ts.sdk.modelcontextprotocol.io/v2/)
 The hosted MCP interface should use Streamable HTTP rather than legacy HTTP+SSE. The architecture should preferably remain stateless where practical so ordinary horizontal HTTP scaling is possible.
@@ -94,8 +84,7 @@ OAuth 2.1/OIDC
 Row Level Security
 
 database migrations
-Supabase Auth currently supports OAuth 2.1 server functionality specifically suitable for authenticating MCP clients using an application's existing user base. (https://supabase.com/docs/guides/auth/oauth-server)
-6. Proposed Technology Stack
+Supabase Auth currently supports OAuth 2.1 server functionality specifically suitable for authenticating MCP clients using an application's existing user base. (https://supabase.com/docs/guides/auth/oauth-server) 6. Proposed Technology Stack
 Core
 
 TypeScript
@@ -136,16 +125,14 @@ Remote Streamable HTTP transport
 
 Zod schemas for inputs
 Optional Infrastructure
-A Redis-compatible rate-limit adapter may be provided for production-style distributed rate limiting, but the starter should remain runnable locally without requiring unnecessary third-party services.
-7. High-Level Architecture
+A Redis-compatible rate-limit adapter may be provided for production-style distributed rate limiting, but the starter should remain runnable locally without requiring unnecessary third-party services. 7. High-Level Architecture
 MCP-Compatible Client ChatGPT / Claude / Cursor / etc. │ │ OAuth 2.1 ▼ ┌─────────────────┐ │ MCP Server │ │ │ │ Authentication │ │ Validation │ │ Authorization │ │ Rate Limiting │ │ Audit Logging │ └────────┬────────┘ │ ▼ Application Services │ ┌────────┴────────┐ │ │ ▼ ▼ Supabase Existing SaaS Postgres Business Logic │ ▼ RLS
 The important architectural rule is:
 MCP tools should call application/domain services rather than duplicating business logic inside the MCP handlers.
 The same business rules should therefore be reusable from:
 DevStitch | MCP SaaS Starter PRD
 Page 4
-Web Application │ ▼Application Services ▲ │MCP Server
-8. Demo SaaS Domain
+Web Application │ ▼Application Services ▲ │MCP Server 8. Demo SaaS Domain
 Keep the demo intentionally simple.
 Organization
 Represents one SaaS tenant.
@@ -245,8 +232,7 @@ approved_by
 
 requested_at
 
-resolved_at
-9. Roles and Permissions
+resolved_at 9. Roles and Permissions
 V1 should implement three roles.
 Admin
 Can:
@@ -277,8 +263,7 @@ Viewer
 Can only use read-only tools.
 Permissions must be enforced server-side.
 The MCP client's UI must never be relied upon for authorization.
-Supabase RLS should provide an additional database-level tenant isolation boundary.
-10. Authentication Flow
+Supabase RLS should provide an additional database-level tenant isolation boundary. 10. Authentication Flow
 Expected flow:
 DevStitch | MCP SaaS Starter PRD
 Page 6
@@ -295,8 +280,7 @@ Approve;
 
 Deny.
 Do not build a custom OAuth server.
-Use Supabase's OAuth 2.1 capabilities.
-11. MCP Tools — V1
+Use Supabase's OAuth 2.1 capabilities. 11. MCP Tools — V1
 V1 should expose a small but complete set of tools.
 Read Tools
 list_projects
@@ -306,8 +290,7 @@ Returns one project if the current user has permission to access it.
 list_tasks
 Returns tasks for an accessible project.
 get_task
-Returns a single permitted task.
-12. Write Tools
+Returns a single permitted task. 12. Write Tools
 create_task
 Creates a task inside an authorized project.
 
@@ -332,8 +315,7 @@ status
 assignee
 assign_task
 Assigns an existing task to an eligible organization member.
-Each tool must validate inputs using explicit schemas before application logic executes.
-13. Protected / Destructive Action
+Each tool must validate inputs using explicit schemas before application logic executes. 13. Protected / Destructive Action
 V1 should include at least one action demonstrating how sensitive agent operations should be handled.
 Recommended:
 delete_task
@@ -344,8 +326,7 @@ This gives the repository an important real-world safety demonstration.
 The web dashboard should contain a small:
 Pending Agent Actions
 section where authorized users can approve or reject such requests.
-V1 only needs one protected-action workflow to prove the pattern.
-14. MCP Resources
+V1 only needs one protected-action workflow to prove the pattern. 14. MCP Resources
 Include at least one example showing that MCP integration is not limited to tools.
 Recommended resources:
 Project Resource
@@ -356,8 +337,7 @@ Page 8
 Organization Resource
 organization://current
 Returns safe context about the currently authenticated organization.
-All resource access must enforce the same tenant and permission boundaries as tool calls.
-15. Authorization Layer
+All resource access must enforce the same tenant and permission boundaries as tool calls. 15. Authorization Layer
 Tool handlers should not contain large permission implementations.
 Use a reusable authorization pattern such as:
 authorize(user, action, resource)
@@ -365,8 +345,7 @@ Example:
 authorize(user, "task:create", project)authorize(user, "task:update", task)authorize(user, "task:delete", task)
 MCP handlers should conceptually remain thin:
 Validate ↓Authenticate ↓Authorize ↓Application Service ↓Audit ↓Return
-This separation is one of the architectural concepts we want the repository to teach.
-16. Multi-Tenant Security
+This separation is one of the architectural concepts we want the repository to teach. 16. Multi-Tenant Security
 Every relevant database entity must belong directly or indirectly to an organization.
 Application queries must never trust an organization_id supplied by the AI client.
 Tenant context must come from authenticated identity/membership.
@@ -377,8 +356,7 @@ IDs are guessed;
 malformed MCP calls are made;
 
 application-level checks accidentally fail.
-Tests for cross-tenant access are mandatory.
-17. Input Validation
+Tests for cross-tenant access are mandatory. 17. Input Validation
 All MCP tool inputs must have explicit schemas.
 Examples of validation:
 
@@ -395,8 +373,7 @@ optional properties
 permitted status transitions
 DevStitch | MCP SaaS Starter PRD
 Page 9
-Never pass arbitrary LLM-generated objects directly into database operations.
-18. Rate Limiting
+Never pass arbitrary LLM-generated objects directly into database operations. 18. Rate Limiting
 Provide reusable rate limiting around MCP tool execution.
 At minimum allow limits by:
 
@@ -409,16 +386,14 @@ organization;
 tool.
 Example configuration:
 Read tools:higher limitWrite tools:lower limitSensitive tools:strict limit
-Provide a development-safe implementation and document how distributed production rate limiting can be plugged in.
-19. Audit Logging
+Provide a development-safe implementation and document how distributed production rate limiting can be plugged in. 19. Audit Logging
 Every MCP tool execution should create an audit event.
 Example:
 User: john@example.comOrganization: AcmeClient: ClaudeTool: update_taskResource: TASK-123Result: SuccessDuration: 184msTimestamp: ...
 The demo dashboard should provide a simple Agent Activity view.
 Purpose:
 “I can see exactly what an AI agent did inside my product.”
-This is an important showcase feature.
-20. Error Handling
+This is an important showcase feature. 20. Error Handling
 Return structured MCP-friendly errors.
 Differentiate between:
 
@@ -437,11 +412,9 @@ protected action pending;
 internal server failure.
 Internal database or infrastructure information must not be leaked to the MCP client.
 DevStitch | MCP SaaS Starter PRD
-Page 10
-21. Suggested Repository Structure
+Page 10 21. Suggested Repository Structure
 mcp-saas-starter/│├── apps/│ ├── web/│ │ ├── dashboard│ │ ├── auth│ │ ├── oauth-consent│ │ ├── agent-activity│ │ └── approvals│ ││ └── mcp-server/│ ├── tools/│ ├── resources/│ ├── middleware/│ └── server/│├── packages/│ ├── database/│ ├── auth/│ ├── authorization/│ ├── domain/│ ├── audit/│ ├── rate-limit/│ └── shared/│├── supabase/│ ├── migrations/│ └── seed.sql│├── docs/│ ├── architecture.md│ ├── authentication.md│ ├── authorization.md│ ├── adding-tools.md│ ├── deployment.md│ └── security.md│├── examples/│├── .env.example├── CONTRIBUTING.md├── SECURITY.md├── LICENSE└── README.md
-The exact package split can be adjusted by the technical lead if a simpler structure improves maintainability.
-22. Local Developer Experience
+The exact package split can be adjusted by the technical lead if a simpler structure improves maintainability. 22. Local Developer Experience
 The project must be straightforward for an external developer to run.
 Target flow:
 git clone ...pnpm install
@@ -462,26 +435,17 @@ multiple roles;
 several projects;
 
 several tasks.
-A developer should not need to reverse-engineer the architecture to run the project.
-23. MCP Testing
+A developer should not need to reverse-engineer the architecture to run the project. 23. MCP Testing
 The repository should include instructions for connecting an MCP-compatible client to the server.
-At minimum document:
-11.
-MCP endpoint;
-12.
-OAuth authentication;
-13.
-listing available tools;
-14.
-reading project information;
-15.
-creating a task;
-16.
-attempting an unauthorized operation;
-17.
+At minimum document: 11.
+MCP endpoint; 12.
+OAuth authentication; 13.
+listing available tools; 14.
+reading project information; 15.
+creating a task; 16.
+attempting an unauthorized operation; 17.
 triggering a protected action.
-Provide automated tests for MCP tool handlers where practical.
-24. Testing Requirements
+Provide automated tests for MCP tool handlers where practical. 24. Testing Requirements
 Unit Tests
 Cover:
 
@@ -530,8 +494,7 @@ Denied
 Admin destructive action
 Admin invokes delete_task.
 Expected:
-Pending approval
-25. Demo UI
+Pending approval 25. Demo UI
 Do NOT spend excessive time designing a full SaaS frontend.
 UI exists to make the architecture demonstrable.
 Required screens:
@@ -551,55 +514,36 @@ Approve
 Reject
 Clean DevStitch branding is sufficient.
 DevStitch | MCP SaaS Starter PRD
-Page 13
-26. README Requirements
+Page 13 26. README Requirements
 The README is a major product asset and should receive similar attention to the code.
 Above the fold:
 MCP SaaS Starter
 Add a secure MCP interface to your existing SaaS.
 Then visually show:
 AI Agent ↓OAuth ↓MCP Server ↓Permissions ↓Your SaaS
-README sections:
-18.
-What this project solves
-19.
-Architecture diagram
-20.
-Demo/screenshots
-21.
-Features
-22.
-Quick start
-23.
-Authentication flow
-24.
-Multi-tenancy
-25.
-Permissions
-26.
-Adding a new MCP tool
-27.
-Protected actions
-28.
-Audit logging
-29.
-Deployment
-30.
-Security considerations
-31.
-Roadmap
-32.
-Contributing
-33.
-About DevStitch
-27. DevStitch Positioning
+README sections: 18.
+What this project solves 19.
+Architecture diagram 20.
+Demo/screenshots 21.
+Features 22.
+Quick start 23.
+Authentication flow 24.
+Multi-tenancy 25.
+Permissions 26.
+Adding a new MCP tool 27.
+Protected actions 28.
+Audit logging 29.
+Deployment 30.
+Security considerations 31.
+Roadmap 32.
+Contributing 33.
+About DevStitch 27. DevStitch Positioning
 The repository should not be aggressively promotional.
 Include a short section near the bottom:
 Built by DevStitch
 DevStitch helps founders and startup teams turn AI-assisted prototypes and early SaaS products into secure, production-ready platforms, including AI features, MCP integrations and scalable application architecture.
 Then link to the DevStitch website/profile.
-The code should create the credibility; the CTA should remain subtle.
-28. Documentation Requirements
+The code should create the credibility; the CTA should remain subtle. 28. Documentation Requirements
 architecture.md
 Explain boundaries between:
 
@@ -639,8 +583,7 @@ audit logs
 
 destructive actions
 deployment.md
-Show a typical deployment architecture without locking users to one hosting vendor.
-29. Public Repository Quality
+Show a typical deployment architecture without locking users to one hosting vendor. 29. Public Repository Quality
 Repository must include:
 
 MIT License
@@ -673,8 +616,7 @@ clear documentation
 No DevStitch/client credentials or internal project code should be reused.
 Everything must be developed specifically for the public repository.
 DevStitch | MCP SaaS Starter PRD
-Page 15
-30. Out of Scope — V1
+Page 15 30. Out of Scope — V1
 Do NOT include unless required during implementation:
 
 billing/Stripe;
@@ -709,8 +651,7 @@ dozens of MCP tools;
 
 mobile application.
 Avoid scope creep.
-The objective is to demonstrate the architecture extremely well, not maximize feature count.
-31. Implementation Milestones
+The objective is to demonstrate the architecture extremely well, not maximize feature count. 31. Implementation Milestones
 Milestone 1 — SaaS Foundation
 Build:
 
@@ -802,8 +743,7 @@ security policy;
 deployment instructions;
 
 repository cleanup.
-Outcome: Public-ready DevStitch GitHub repository.
-32. Definition of Done
+Outcome: Public-ready DevStitch GitHub repository. 32. Definition of Done
 V1 is complete when all of the following are demonstrable:
 Scenario 1
 A user connects an MCP-compatible client and authenticates using the SaaS account.
@@ -826,8 +766,7 @@ An administrator approves the pending action.
 Scenario 9
 The Agent Activity screen shows what the MCP client performed.
 Scenario 10
-A developer unfamiliar with the codebase can follow the README and run the reference project without undocumented setup.
-33. Primary Demo Story
+A developer unfamiliar with the codebase can follow the README and run the reference project without undocumented setup. 33. Primary Demo Story
 The final repository/demo should tell this story:
 A SaaS company already has users, organizations, projects, tasks and permissions.
 They want their customers to say to an AI assistant:
@@ -841,8 +780,7 @@ the application does not blindly execute the destructive operation.
 Instead:
 “Approval required.”
 The SaaS owner can see the request, approve or reject it, and later see the full action inside the audit log.
-That single end-to-end demonstration should communicate the value of the entire repository.
-34. Product Principle
+That single end-to-end demonstration should communicate the value of the entire repository. 34. Product Principle
 When making implementation decisions, prioritize:
 Security > architectural clarity > developer experience > feature count.
 A smaller repository that clearly demonstrates how to add MCP safely to a real SaaS is more valuable to DevStitch than a large starter containing many unrelated features.

@@ -1,0 +1,32 @@
+name: Bug report
+description: Something in the MCP server, web app, or tenant rules does not behave as documented.
+title: '[bug] '
+labels: ['bug']
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the role (admin, member, viewer) and organization. Do not paste access tokens or secret keys.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - MCP tool or resource
+        - OAuth or consent
+        - Approvals
+        - Agent activity
+        - Database or RLS
+        - Docs
+    validations:
+      required: true

@@ -1,0 +1,19 @@
+name: Feature request
+description: Propose a change to the starter that still fits the security model.
+title: '[feature] '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard to do with the starter today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How should it behave for admin, member, and viewer, and across organizations?
+    validations:
+      required: true

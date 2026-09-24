@@ -8,10 +8,7 @@ export type LoginState = {
   error: string | null;
 };
 
-export async function loginAction(
-  _prev: LoginState,
-  formData: FormData,
-): Promise<LoginState> {
+export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get('email') ?? '').trim();
   const password = String(formData.get('password') ?? '');
   const next = safeInternalPath(String(formData.get('next') ?? ''));

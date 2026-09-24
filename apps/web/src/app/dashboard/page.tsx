@@ -1,8 +1,5 @@
 import Link from 'next/link';
-import {
-  pickPrimaryMembership,
-  resolveUserMemberships,
-} from '@mcp-saas-starter/auth';
+import { pickPrimaryMembership, resolveUserMemberships } from '@mcp-saas-starter/auth';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function DashboardPage() {

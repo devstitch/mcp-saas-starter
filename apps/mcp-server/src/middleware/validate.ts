@@ -2,6 +2,8 @@ import { ToolInputError, parseToolInput, type ParsedToolInput } from '@mcp-saas-
 import type { Request } from 'express';
 
 declare global {
+  // Express augments Request through the Express namespace.
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       mcpToolInput?: ParsedToolInput;
@@ -23,9 +25,7 @@ export async function validate(req: Request): Promise<void> {
   const params = isRecord(req.body.params) ? req.body.params : undefined;
   const name = params?.name;
   if (typeof name !== 'string' || name.length === 0) {
-    throw new ToolInputError('tools/call', [
-      { path: 'name', message: 'Tool name is required.' },
-    ]);
+    throw new ToolInputError('tools/call', [{ path: 'name', message: 'Tool name is required.' }]);
   }
 
   if (params?.arguments !== undefined && !isRecord(params.arguments)) {

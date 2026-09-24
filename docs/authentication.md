@@ -49,13 +49,13 @@ sequenceDiagram
 
 What each step uses:
 
-| Step | Who | Library |
-| --- | --- | --- |
-| Consent details, approve, deny | `apps/web` `/oauth-consent` | `supabase.auth.oauth` |
-| Login if the browser has no session | existing `/login`, `next` query preserved | `@supabase/ssr` |
-| 401 challenge and discovery routes | `apps/mcp-server` | `@modelcontextprotocol/express` `requireBearerAuth`, `mcpAuthMetadataRouter` |
-| Token check | MCP `authenticate` middleware | `supabase.auth.getClaims` |
-| Tenant | same middleware | `resolveUserContext` from `@mcp-saas-starter/auth` |
+| Step                                | Who                                       | Library                                                                      |
+| ----------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------- |
+| Consent details, approve, deny      | `apps/web` `/oauth-consent`               | `supabase.auth.oauth`                                                        |
+| Login if the browser has no session | existing `/login`, `next` query preserved | `@supabase/ssr`                                                              |
+| 401 challenge and discovery routes  | `apps/mcp-server`                         | `@modelcontextprotocol/express` `requireBearerAuth`, `mcpAuthMetadataRouter` |
+| Token check                         | MCP `authenticate` middleware             | `supabase.auth.getClaims`                                                    |
+| Tenant                              | same middleware                           | `resolveUserContext` from `@mcp-saas-starter/auth`                           |
 
 `/health` stays public. `/mcp` does not.
 
@@ -74,11 +74,11 @@ Missing, invalid, or expired tokens get HTTP 401 with a `WWW-Authenticate` chall
 
 ## Local URLs
 
-| Surface | URL |
-| --- | --- |
-| Consent | `http://localhost:3000/oauth-consent` |
-| MCP | `MCP_SERVER_URL` + `/mcp` (local default `http://127.0.0.1:3001/mcp`) |
-| Protected resource metadata | derived from that same origin |
+| Surface                     | URL                                                                   |
+| --------------------------- | --------------------------------------------------------------------- |
+| Consent                     | `http://localhost:3000/oauth-consent`                                 |
+| MCP                         | `MCP_SERVER_URL` + `/mcp` (local default `http://127.0.0.1:3001/mcp`) |
+| Protected resource metadata | derived from that same origin                                         |
 
 ## ChatGPT or another remote client
 

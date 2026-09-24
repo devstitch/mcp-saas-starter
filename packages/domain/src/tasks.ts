@@ -100,11 +100,7 @@ export async function createTask(
   await requireProject(client, userContext, input.projectId);
 
   if (input.assigneeId) {
-    await assertAssigneeInOrganization(
-      client,
-      userContext.organizationId,
-      input.assigneeId,
-    );
+    await assertAssigneeInOrganization(client, userContext.organizationId, input.assigneeId);
   }
 
   const { data, error } = await client
@@ -139,11 +135,7 @@ export async function updateTask(
   authorize(userContext, 'task:update', { organizationId: existing.organization_id });
 
   if (input.assigneeId) {
-    await assertAssigneeInOrganization(
-      client,
-      userContext.organizationId,
-      input.assigneeId,
-    );
+    await assertAssigneeInOrganization(client, userContext.organizationId, input.assigneeId);
   }
 
   if (input.title !== undefined && !input.title.trim()) {
@@ -161,9 +153,7 @@ export async function updateTask(
   if (input.description !== undefined) patch.description = input.description;
   if (input.status !== undefined) {
     if (!isPermittedStatusTransition(existing.status, input.status)) {
-      throw new ValidationError(
-        `Cannot change status from ${existing.status} to ${input.status}.`,
-      );
+      throw new ValidationError(`Cannot change status from ${existing.status} to ${input.status}.`);
     }
     patch.status = input.status;
   }

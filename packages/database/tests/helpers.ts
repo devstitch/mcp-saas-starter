@@ -21,24 +21,18 @@ export type TestUser = {
 export function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
-    throw new Error(
-      `Missing ${name}. Set it in .env.local before running RLS tests.`,
-    );
+    throw new Error(`Missing ${name}. Set it in .env.local before running RLS tests.`);
   }
   return value;
 }
 
 export function createServiceClient(): AppSupabaseClient {
-  return createClient<Database>(
-    requireEnv('SUPABASE_URL'),
-    requireEnv('SUPABASE_SECRET_KEY'),
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+  return createClient<Database>(requireEnv('SUPABASE_URL'), requireEnv('SUPABASE_SECRET_KEY'), {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
     },
-  );
+  });
 }
 
 export async function createTestUser(

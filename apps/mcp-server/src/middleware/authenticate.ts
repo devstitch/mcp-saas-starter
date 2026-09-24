@@ -1,6 +1,7 @@
 import type { MembershipRole } from '@mcp-saas-starter/database';
 import { createSupabaseClient } from '@mcp-saas-starter/database';
 import { resolveUserContext } from '@mcp-saas-starter/auth';
+import { InternalError, UnauthenticatedError, UnauthorizedError } from '@mcp-saas-starter/shared';
 import type { AuthInfo } from '@modelcontextprotocol/server';
 import type { Request } from 'express';
 import { requireSupabasePublishableKey, requireSupabaseUrl } from '../env.js';
@@ -19,18 +20,6 @@ export type McpAuthContext = {
   accessToken: string;
 };
 
-export class RequestAuthError extends Error {
-  readonly status: number;
-  readonly code: string;
-
-  constructor(status: number, code: string, message: string) {
-    super(message);
-    this.name = 'RequestAuthError';
-    this.status = status;
-    this.code = code;
-  }
-}
-
 function readAuth(req: Request): AuthInfo | undefined {
   return (req as Request & { auth?: AuthInfo }).auth;
 }
@@ -38,7 +27,7 @@ function readAuth(req: Request): AuthInfo | undefined {
 function readUserId(auth: AuthInfo): string {
   const userId = auth.extra?.userId;
   if (typeof userId === 'string' && userId.length > 0) return userId;
-  throw new RequestAuthError(401, 'invalid_token', 'Access token is missing a user id.');
+  throw new UnauthenticatedError('Access token is missing a user id.');
 }
 
 /**
@@ -48,7 +37,7 @@ function readUserId(auth: AuthInfo): string {
 export async function authenticate(req: Request): Promise<void> {
   const auth = readAuth(req);
   if (!auth) {
-    throw new RequestAuthError(401, 'invalid_token', 'Missing access token.');
+    throw new UnauthenticatedError('Missing access token.');
   }
 
   const userId = readUserId(auth);
@@ -57,33 +46,19 @@ export async function authenticate(req: Request): Promise<void> {
     (typeof auth.extra?.clientId === 'string' ? auth.extra.clientId : null) ||
     null;
 
-  const userClient = createSupabaseClient(
-    requireSupabaseUrl(),
-    requireSupabasePublishableKey(),
-    { accessToken: auth.token },
-  );
+  const userClient = createSupabaseClient(requireSupabaseUrl(), requireSupabasePublishableKey(), {
+    accessToken: auth.token,
+  });
 
   let userContext;
   try {
     userContext = await resolveUserContext(userClient, userId);
   } catch (error) {
-    console.error(
-      'Failed to resolve membership:',
-      error instanceof Error ? error.message : 'unknown error',
-    );
-    throw new RequestAuthError(
-      500,
-      'server_error',
-      'Could not resolve organization membership.',
-    );
+    throw new InternalError(error);
   }
 
   if (!userContext) {
-    throw new RequestAuthError(
-      403,
-      'access_denied',
-      'This account is not a member of an organization.',
-    );
+    throw new UnauthorizedError('This account is not a member of an organization.');
   }
 
   const mcpContext: McpAuthContext = {

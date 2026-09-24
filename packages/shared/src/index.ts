@@ -21,3 +21,14 @@ export {
 } from './tool-inputs.js';
 
 export type { ParsedToolInput, TaskStatus, ToolInputIssue, ToolName } from './tool-inputs.js';
+
+export {
+  AppError,
+  InternalError,
+  NotFoundError,
+  ProtectedActionPendingError,
+  RateLimitError,
+  UnauthenticatedError,
+  UnauthorizedError,
+  ValidationError,
+} from './errors.js';

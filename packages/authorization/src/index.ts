@@ -48,26 +48,18 @@ export class AuthorizationError extends Error {
   readonly role: MembershipRole;
 
   constructor(user: UserContext, action: string, message?: string) {
-    super(
-      message ??
-        `Role "${user.role}" is not allowed to perform "${action}".`,
-    );
+    super(message ?? `Role "${user.role}" is not allowed to perform "${action}".`);
     this.name = 'AuthorizationError';
     this.action = action;
     this.role = user.role;
   }
 }
 
-export function permissionsForRole(
-  role: MembershipRole,
-): ReadonlySet<AuthorizationAction> {
+export function permissionsForRole(role: MembershipRole): ReadonlySet<AuthorizationAction> {
   return ROLE_PERMISSIONS[role];
 }
 
-export function canPerform(
-  role: MembershipRole,
-  action: AuthorizationAction,
-): boolean {
+export function canPerform(role: MembershipRole, action: AuthorizationAction): boolean {
   return ROLE_PERMISSIONS[role].has(action);
 }
 
@@ -82,11 +74,7 @@ export function authorize(
   resource?: Resource,
 ): true {
   if (resource && resource.organizationId !== user.organizationId) {
-    throw new AuthorizationError(
-      user,
-      action,
-      'Cross-tenant access is not allowed.',
-    );
+    throw new AuthorizationError(user, action, 'Cross-tenant access is not allowed.');
   }
 
   if (!canPerform(user.role, action)) {

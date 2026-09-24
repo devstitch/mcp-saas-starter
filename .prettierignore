@@ -4,3 +4,6 @@ dist
 .turbo
 pnpm-lock.yaml
 coverage
+LICENSE
+.env.example
+apps/web/next-env.d.ts

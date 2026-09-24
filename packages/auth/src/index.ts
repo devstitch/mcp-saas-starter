@@ -47,9 +47,7 @@ export async function resolveUserMemberships(
   }
 
   return ((data ?? []) as MembershipRow[]).map((row) => {
-    const org = Array.isArray(row.organizations)
-      ? row.organizations[0]
-      : row.organizations;
+    const org = Array.isArray(row.organizations) ? row.organizations[0] : row.organizations;
 
     return {
       organizationId: row.organization_id,
@@ -63,17 +61,12 @@ export async function resolveUserMemberships(
  * Pick a single active membership for V1 (one-org-at-a-time UX).
  * Prefers an admin membership when present.
  */
-export function pickPrimaryMembership(
-  memberships: UserMembership[],
-): UserMembership | null {
+export function pickPrimaryMembership(memberships: UserMembership[]): UserMembership | null {
   if (memberships.length === 0) return null;
   return memberships.find((m) => m.role === 'admin') ?? memberships[0] ?? null;
 }
 
-export function toUserContext(
-  userId: string,
-  membership: UserMembership,
-): UserContext {
+export function toUserContext(userId: string, membership: UserMembership): UserContext {
   return {
     userId,
     organizationId: membership.organizationId,

@@ -34,8 +34,6 @@ export function createSupabaseClient(
       autoRefreshToken: false,
       persistSession: false,
     },
-    global: accessToken
-      ? { headers: { Authorization: `Bearer ${accessToken}` } }
-      : undefined,
+    global: accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : undefined,
   });
 }

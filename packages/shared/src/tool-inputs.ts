@@ -160,9 +160,7 @@ function issuesFromZod(error: z.ZodError): ToolInputIssue[] {
  */
 export function parseToolInput(toolName: string, raw: unknown): ParsedToolInput {
   if (!isToolName(toolName)) {
-    throw new ToolInputError(toolName || '(missing)', [
-      { path: 'name', message: 'Unknown tool.' },
-    ]);
+    throw new ToolInputError(toolName || '(missing)', [{ path: 'name', message: 'Unknown tool.' }]);
   }
 
   const parsed = TOOL_INPUT_SCHEMAS[toolName].safeParse(raw ?? {});

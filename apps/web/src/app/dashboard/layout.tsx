@@ -1,9 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import {
-  pickPrimaryMembership,
-  resolveUserMemberships,
-} from '@mcp-saas-starter/auth';
+import { pickPrimaryMembership, resolveUserMemberships } from '@mcp-saas-starter/auth';
 import { createClient } from '@/lib/supabase/server';
 import { signOutAction } from '@/app/login/actions';
 
@@ -14,11 +11,7 @@ const nav = [
   { href: '/dashboard/approvals', label: 'Pending Actions' },
 ] as const;
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -50,7 +43,11 @@ export default async function DashboardLayout({
         </div>
         <nav className="mx-auto flex max-w-5xl gap-4 overflow-x-auto px-6 pb-3 text-sm">
           {nav.map((item) => (
-            <Link key={item.href} href={item.href} className="text-neutral-700 underline-offset-4 hover:underline">
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-neutral-700 underline-offset-4 hover:underline"
+            >
               {item.label}
             </Link>
           ))}

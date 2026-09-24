@@ -9,13 +9,7 @@ export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'done';
 export type ProtectedActionStatus = 'pending' | 'approved' | 'rejected';
 export type McpAuditResultStatus = 'success' | 'error' | 'denied' | 'pending';
 
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   public: {

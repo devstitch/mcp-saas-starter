@@ -31,6 +31,10 @@ export function requireSupabasePublishableKey(): string {
   return required('SUPABASE_PUBLISHABLE_KEY');
 }
 
+export function requireSupabaseSecretKey(): string {
+  return required('SUPABASE_SECRET_KEY');
+}
+
 /** Public MCP endpoint. MCP_SERVER_URL is the origin; /mcp is appended when missing. */
 export function mcpEndpointUrl(mcpServerUrl: string): URL {
   const base = mcpServerUrl.replace(/\/$/, '');

@@ -1,13 +1,13 @@
 import type { UserContext } from '@mcp-saas-starter/auth';
 import type { AppSupabaseClient } from '@mcp-saas-starter/database';
 import {
-  AuthorizationError,
   NotFoundError,
   getProject,
   getTask,
   listProjects,
   listTasks,
 } from '@mcp-saas-starter/domain';
+import type { AuditSink } from '@mcp-saas-starter/audit';
 import type { McpServer } from '@modelcontextprotocol/server';
 import {
   getProjectInput,
@@ -15,42 +15,19 @@ import {
   listProjectsInput,
   listTasksInput,
 } from '@mcp-saas-starter/shared';
+import { runAudited } from './run-audited.js';
 
 export type ReadToolDeps = {
   client: AppSupabaseClient;
   userContext: UserContext;
+  audit: AuditSink;
 };
 
 const NOT_PERMITTED = 'Not found or not permitted.';
 
-function jsonResult(value: unknown) {
-  return {
-    content: [{ type: 'text' as const, text: JSON.stringify(value) }],
-  };
-}
-
-function errorResult(message: string) {
-  return {
-    isError: true as const,
-    content: [{ type: 'text' as const, text: message }],
-  };
-}
-
-async function runRead<T>(work: () => Promise<T>) {
-  try {
-    return jsonResult(await work());
-  } catch (error) {
-    if (error instanceof NotFoundError || error instanceof AuthorizationError) {
-      return errorResult(NOT_PERMITTED);
-    }
-    console.error(error instanceof Error ? error.message : 'Read tool failed');
-    return errorResult('The tool could not be completed.');
-  }
-}
-
 /** Read-only tools. Handlers call domain services and do not query or authorize themselves. */
 export function registerReadTools(server: McpServer, deps: ReadToolDeps): void {
-  const { client, userContext } = deps;
+  const { client, userContext, audit } = deps;
 
   server.registerTool(
     'list_projects',
@@ -60,9 +37,15 @@ export function registerReadTools(server: McpServer, deps: ReadToolDeps): void {
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
     async (args) =>
-      runRead(async () => {
-        const projects = await listProjects(client, userContext);
-        return args.limit === undefined ? projects : projects.slice(0, args.limit);
+      runAudited({
+        sink: audit,
+        toolName: 'list_projects',
+        actionType: 'tool',
+        input: args,
+        work: async () => {
+          const projects = await listProjects(client, userContext);
+          return args.limit === undefined ? projects : projects.slice(0, args.limit);
+        },
       }),
   );
 
@@ -73,19 +56,18 @@ export function registerReadTools(server: McpServer, deps: ReadToolDeps): void {
       inputSchema: getProjectInput,
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (args) => {
-      try {
-        const project = await getProject(client, userContext, args.projectId);
-        if (!project) return errorResult(NOT_PERMITTED);
-        return jsonResult(project);
-      } catch (error) {
-        if (error instanceof NotFoundError || error instanceof AuthorizationError) {
-          return errorResult(NOT_PERMITTED);
-        }
-        console.error(error instanceof Error ? error.message : 'get_project failed');
-        return errorResult('The tool could not be completed.');
-      }
-    },
+    async (args) =>
+      runAudited({
+        sink: audit,
+        toolName: 'get_project',
+        actionType: 'tool',
+        input: args,
+        work: async () => {
+          const project = await getProject(client, userContext, args.projectId);
+          if (!project) throw new NotFoundError(NOT_PERMITTED);
+          return project;
+        },
+      }),
   );
 
   server.registerTool(
@@ -96,11 +78,17 @@ export function registerReadTools(server: McpServer, deps: ReadToolDeps): void {
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
     async (args) =>
-      runRead(async () => {
-        const tasks = await listTasks(client, userContext, args.projectId);
-        return args.status === undefined
-          ? tasks
-          : tasks.filter((task) => task.status === args.status);
+      runAudited({
+        sink: audit,
+        toolName: 'list_tasks',
+        actionType: 'tool',
+        input: args,
+        work: async () => {
+          const tasks = await listTasks(client, userContext, args.projectId);
+          return args.status === undefined
+            ? tasks
+            : tasks.filter((task) => task.status === args.status);
+        },
       }),
   );
 
@@ -111,18 +99,17 @@ export function registerReadTools(server: McpServer, deps: ReadToolDeps): void {
       inputSchema: getTaskInput,
       annotations: { readOnlyHint: true, destructiveHint: false },
     },
-    async (args) => {
-      try {
-        const task = await getTask(client, userContext, args.taskId);
-        if (!task) return errorResult(NOT_PERMITTED);
-        return jsonResult(task);
-      } catch (error) {
-        if (error instanceof NotFoundError || error instanceof AuthorizationError) {
-          return errorResult(NOT_PERMITTED);
-        }
-        console.error(error instanceof Error ? error.message : 'get_task failed');
-        return errorResult('The tool could not be completed.');
-      }
-    },
+    async (args) =>
+      runAudited({
+        sink: audit,
+        toolName: 'get_task',
+        actionType: 'tool',
+        input: args,
+        work: async () => {
+          const task = await getTask(client, userContext, args.taskId);
+          if (!task) throw new NotFoundError(NOT_PERMITTED);
+          return task;
+        },
+      }),
   );
 }

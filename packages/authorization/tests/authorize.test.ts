@@ -94,8 +94,6 @@ describe('tenant resource check', () => {
   });
 
   it('allows when resource.organizationId matches user context', () => {
-    expect(
-      authorize(user('admin', ORG_A), 'project:view', { organizationId: ORG_A }),
-    ).toBe(true);
+    expect(authorize(user('admin', ORG_A), 'project:view', { organizationId: ORG_A })).toBe(true);
   });
 });

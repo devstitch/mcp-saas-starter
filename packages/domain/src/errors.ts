@@ -1,3 +1,8 @@
+import {
+  NotFoundError as SharedNotFoundError,
+  ValidationError as SharedValidationError,
+} from '@mcp-saas-starter/shared';
+
 export class DomainError extends Error {
   readonly code: string;
 
@@ -8,10 +13,9 @@ export class DomainError extends Error {
   }
 }
 
-export class NotFoundError extends DomainError {
+export class NotFoundError extends SharedNotFoundError {
   constructor(message: string) {
-    super('NOT_FOUND', message);
-    this.name = 'NotFoundError';
+    super(message);
   }
 }
 
@@ -22,9 +26,8 @@ export class ForbiddenError extends DomainError {
   }
 }
 
-export class ValidationError extends DomainError {
+export class ValidationError extends SharedValidationError {
   constructor(message: string) {
-    super('VALIDATION', message);
-    this.name = 'ValidationError';
+    super(message);
   }
 }

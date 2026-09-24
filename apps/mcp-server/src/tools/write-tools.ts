@@ -1,54 +1,24 @@
 import type { UserContext } from '@mcp-saas-starter/auth';
 import type { AppSupabaseClient } from '@mcp-saas-starter/database';
-import {
-  AuthorizationError,
-  NotFoundError,
-  ValidationError,
-  assignTask,
-  createTask,
-  updateTask,
-} from '@mcp-saas-starter/domain';
+import { assignTask, createTask, requestDeleteTask, updateTask } from '@mcp-saas-starter/domain';
+import type { AuditSink } from '@mcp-saas-starter/audit';
 import type { McpServer } from '@modelcontextprotocol/server';
-import { assignTaskInput, createTaskInput, updateTaskInput } from '@mcp-saas-starter/shared';
+import {
+  assignTaskInput,
+  createTaskInput,
+  deleteTaskInput,
+  updateTaskInput,
+} from '@mcp-saas-starter/shared';
+import { runAudited } from './run-audited.js';
 
 export type WriteToolDeps = {
   client: AppSupabaseClient;
   userContext: UserContext;
+  audit: AuditSink;
 };
 
-const NOT_PERMITTED = 'Not found or not permitted.';
-
-function jsonResult(value: unknown) {
-  return {
-    content: [{ type: 'text' as const, text: JSON.stringify(value) }],
-  };
-}
-
-function errorResult(message: string) {
-  return {
-    isError: true as const,
-    content: [{ type: 'text' as const, text: message }],
-  };
-}
-
-async function runWrite<T>(work: () => Promise<T>) {
-  try {
-    return jsonResult(await work());
-  } catch (error) {
-    if (error instanceof NotFoundError) {
-      return errorResult(NOT_PERMITTED);
-    }
-    if (error instanceof AuthorizationError || error instanceof ValidationError) {
-      return errorResult(error.message);
-    }
-    console.error(error instanceof Error ? error.message : 'Write tool failed');
-    return errorResult('The tool could not be completed.');
-  }
-}
-
-/** Write tools. Handlers call domain services and do not query or authorize themselves. */
 export function registerWriteTools(server: McpServer, deps: WriteToolDeps): void {
-  const { client, userContext } = deps;
+  const { client, userContext, audit } = deps;
 
   server.registerTool(
     'create_task',
@@ -58,14 +28,19 @@ export function registerWriteTools(server: McpServer, deps: WriteToolDeps): void
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
     async (args) =>
-      runWrite(() =>
-        createTask(client, userContext, {
-          projectId: args.projectId,
-          title: args.title,
-          description: args.description,
-          assigneeId: args.assigneeId,
-        }),
-      ),
+      runAudited({
+        sink: audit,
+        toolName: 'create_task',
+        actionType: 'tool',
+        input: args,
+        work: () =>
+          createTask(client, userContext, {
+            projectId: args.projectId,
+            title: args.title,
+            description: args.description,
+            assigneeId: args.assigneeId,
+          }),
+      }),
   );
 
   server.registerTool(
@@ -76,14 +51,24 @@ export function registerWriteTools(server: McpServer, deps: WriteToolDeps): void
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
     async (args) =>
-      runWrite(() =>
-        updateTask(client, userContext, args.taskId, {
+      runAudited({
+        sink: audit,
+        toolName: 'update_task',
+        actionType: 'tool',
+        input: {
+          taskId: args.taskId,
           title: args.title,
-          description: args.description,
           status: args.status,
           assigneeId: args.assigneeId,
-        }),
-      ),
+        },
+        work: () =>
+          updateTask(client, userContext, args.taskId, {
+            title: args.title,
+            description: args.description,
+            status: args.status,
+            assigneeId: args.assigneeId,
+          }),
+      }),
   );
 
   server.registerTool(
@@ -94,6 +79,38 @@ export function registerWriteTools(server: McpServer, deps: WriteToolDeps): void
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
     async (args) =>
-      runWrite(() => assignTask(client, userContext, args.taskId, args.assigneeId)),
+      runAudited({
+        sink: audit,
+        toolName: 'assign_task',
+        actionType: 'tool',
+        input: args,
+        work: () => assignTask(client, userContext, args.taskId, args.assigneeId),
+      }),
+  );
+
+  server.registerTool(
+    'delete_task',
+    {
+      description:
+        'Request deletion of a task in the signed-in organization. Does not delete the task. An admin must approve the pending action.',
+      inputSchema: deleteTaskInput,
+      annotations: { readOnlyHint: false, destructiveHint: true },
+    },
+    async (args) =>
+      runAudited({
+        sink: audit,
+        toolName: 'delete_task',
+        actionType: 'tool',
+        input: args,
+        work: async () => {
+          const action = await requestDeleteTask(client, userContext, args.taskId);
+          return {
+            status: 'pending_approval' as const,
+            message: 'Pending approval. The task was not deleted.',
+            protectedActionId: action.id,
+            taskId: args.taskId,
+          };
+        },
+      }),
   );
 }

@@ -102,7 +102,9 @@ describe('status transitions', () => {
   });
 
   it('rejects jumps that skip the state machine', () => {
-    const jumps: Array<['todo' | 'in_progress' | 'blocked' | 'done', 'todo' | 'in_progress' | 'blocked' | 'done']> = [
+    const jumps: Array<
+      ['todo' | 'in_progress' | 'blocked' | 'done', 'todo' | 'in_progress' | 'blocked' | 'done']
+    > = [
       ['todo', 'done'],
       ['blocked', 'done'],
       ['done', 'todo'],

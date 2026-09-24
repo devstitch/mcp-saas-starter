@@ -12,4 +12,5 @@ export const tools = [
   'create_task',
   'update_task',
   'assign_task',
+  'delete_task',
 ] as const;

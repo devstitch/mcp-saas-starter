@@ -1,9 +1,24 @@
 # Security Policy
 
-## Reporting a Vulnerability
+## Supported versions
 
-If you discover a security vulnerability, please report it privately.
+Security fixes apply to the current `main` branch until a versioned release is tagged.
 
-Do not open a public GitHub issue for security reports.
+## Reporting a vulnerability
 
-Contact details and a formal responsible-disclosure process will be published before the public v1 release.
+Report privately. Do not open a public GitHub issue, and do not include exploit details in a pull request.
+
+Email **security@devstitch.example** with:
+
+- A short description of the issue
+- The affected path (MCP tool, web route, or database policy)
+- Steps to reproduce on the demo seed data
+- The impact (for example cross-tenant read, unauthorized delete, or secret exposure)
+
+Replace `security@devstitch.example` with a monitored address before the public v1 tag.
+
+We will acknowledge the report within 3 business days and aim to confirm or reject it within 10 business days. Please give us a chance to ship a fix before any public write-up.
+
+## Out of scope
+
+The demo password `Password123!` and the `*.example.com` users are intentional local seed data, not production credentials.

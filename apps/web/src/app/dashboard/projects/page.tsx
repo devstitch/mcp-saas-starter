@@ -44,10 +44,7 @@ export default async function ProjectsPage() {
       ) : (
         <ul className="space-y-6">
           {projectsWithTasks.map(({ project, tasks }) => (
-            <li
-              key={project.id}
-              className="rounded border border-neutral-200 bg-white p-4"
-            >
+            <li key={project.id} className="rounded border border-neutral-200 bg-white p-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="text-lg font-medium">{project.name}</h2>
                 <span className="text-xs uppercase tracking-wide text-neutral-500">
@@ -59,9 +56,7 @@ export default async function ProjectsPage() {
               ) : null}
 
               <div className="mt-4">
-                <h3 className="text-sm font-medium text-neutral-700">
-                  Tasks ({tasks.length})
-                </h3>
+                <h3 className="text-sm font-medium text-neutral-700">Tasks ({tasks.length})</h3>
                 {tasks.length === 0 ? (
                   <p className="mt-2 text-sm text-neutral-500">No tasks.</p>
                 ) : (

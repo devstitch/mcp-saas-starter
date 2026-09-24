@@ -47,6 +47,43 @@ export async function getProject(
   return data;
 }
 
+export type ProjectContext = {
+  id: string;
+  name: string;
+  description: string | null;
+  status: Project['status'];
+  taskCount: number;
+};
+
+/**
+ * Project context for the project:// resource. Same view permission as getProject.
+ */
+export async function getProjectContext(
+  client: AppSupabaseClient,
+  userContext: UserContext,
+  projectId: string,
+): Promise<ProjectContext> {
+  const project = await requireProject(client, userContext, projectId);
+
+  const { count, error } = await client
+    .from('tasks')
+    .select('id', { count: 'exact', head: true })
+    .eq('project_id', project.id)
+    .eq('organization_id', userContext.organizationId);
+
+  if (error) {
+    throw new Error(`getProjectContext failed: ${error.message}`);
+  }
+
+  return {
+    id: project.id,
+    name: project.name,
+    description: project.description,
+    status: project.status,
+    taskCount: count ?? 0,
+  };
+}
+
 export async function requireProject(
   client: AppSupabaseClient,
   userContext: UserContext,

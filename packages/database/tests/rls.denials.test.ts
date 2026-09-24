@@ -22,7 +22,11 @@ import {
 const RUN_ID = Date.now().toString(36);
 const PASSWORD = 'TestPassword123!';
 
-describe('RLS multi-tenant denials', () => {
+const live = ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_SECRET_KEY'].every((name) =>
+  Boolean(process.env[name]),
+);
+
+describe.skipIf(!live)('RLS multi-tenant denials', () => {
   let service: AppSupabaseClient;
 
   let orgAId: string;

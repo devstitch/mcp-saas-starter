@@ -28,15 +28,19 @@ config({ path: path.join(repoRoot, '.env') });
 
 const PASSWORD = 'Password123!';
 
+const live = ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_SECRET_KEY'].every((name) =>
+  Boolean(process.env[name]),
+);
+
 function required(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing ${name}`);
   return value;
 }
 
-const supabaseUrl = required('SUPABASE_URL');
-const publishableKey = required('SUPABASE_PUBLISHABLE_KEY');
-const secretKey = required('SUPABASE_SECRET_KEY');
+const supabaseUrl = live ? required('SUPABASE_URL') : '';
+const publishableKey = live ? required('SUPABASE_PUBLISHABLE_KEY') : '';
+const secretKey = live ? required('SUPABASE_SECRET_KEY') : '';
 
 async function signIn(email: string): Promise<{ client: AppSupabaseClient; user: UserContext }> {
   const authClient = createClient(supabaseUrl, publishableKey, {
@@ -78,7 +82,7 @@ afterAll(async () => {
   await service.from('tasks').delete().in('id', createdTaskIds);
 });
 
-describe('write tools against the live project', () => {
+describe.skipIf(!live)('write tools against the live project', () => {
   it('lets a member create a task in their own organization project', async () => {
     const { client, user } = await signIn('member@acme.example.com');
     const projects = await listProjects(client, user);
@@ -125,9 +129,9 @@ describe('write tools against the live project', () => {
       authorize(acme.user, 'task:update', { organizationId: globex.user.organizationId }),
     ).toThrow(AuthorizationError);
 
-    await expect(updateTask(acme.client, acme.user, globexTask.id, { title: 'Cross-tenant edit' })).rejects.toBeInstanceOf(
-      NotFoundError,
-    );
+    await expect(
+      updateTask(acme.client, acme.user, globexTask.id, { title: 'Cross-tenant edit' }),
+    ).rejects.toBeInstanceOf(NotFoundError);
 
     const { data, error } = await acme.client
       .from('tasks')
@@ -135,10 +139,7 @@ describe('write tools against the live project', () => {
       .eq('id', globexTask.id)
       .select('id, title');
 
-    const denied =
-      error != null ||
-      data == null ||
-      (Array.isArray(data) && data.length === 0);
+    const denied = error != null || data == null || (Array.isArray(data) && data.length === 0);
     expect(denied).toBe(true);
 
     const { data: unchanged } = await serviceClient()

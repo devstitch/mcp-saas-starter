@@ -5,8 +5,10 @@ import type { OAuthMetadata } from '@modelcontextprotocol/server';
  * Used only when the live discovery document is not published yet.
  */
 function documentedSupabaseOAuthMetadata(supabaseUrl: string): OAuthMetadata {
-  const issuer = new URL('/auth/v1', supabaseUrl.endsWith('/') ? supabaseUrl : `${supabaseUrl}/`)
-    .href.replace(/\/$/, '');
+  const issuer = new URL(
+    '/auth/v1',
+    supabaseUrl.endsWith('/') ? supabaseUrl : `${supabaseUrl}/`,
+  ).href.replace(/\/$/, '');
 
   return {
     issuer,
@@ -71,7 +73,9 @@ export async function loadSupabaseOAuthMetadata(supabaseUrl: string): Promise<OA
 
   const body: unknown = await response.json();
   if (!isOAuthMetadata(body)) {
-    throw new Error(`Supabase OAuth metadata from ${discoveryUrl.href} is missing required fields.`);
+    throw new Error(
+      `Supabase OAuth metadata from ${discoveryUrl.href} is missing required fields.`,
+    );
   }
 
   return body;
