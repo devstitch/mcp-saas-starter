@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'MCP SaaS Starter',
-  description: 'Add a secure MCP interface to your existing SaaS.',
+  title: 'MCP SaaS Starter | DevStitch',
+  description: 'Add a secure MCP interface to your existing SaaS. Authenticate agents via OAuth, enforce per-tenant permissions, and audit every action.',
 };
 
 export default function RootLayout({
@@ -23,9 +23,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-white text-neutral-900 antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}
       >
         {children}
       </body>
