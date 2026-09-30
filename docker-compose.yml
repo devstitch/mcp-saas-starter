@@ -1,0 +1,21 @@
+name: mcp-saas-starter
+
+services:
+  mcp:
+    build:
+      context: .
+      dockerfile: apps/mcp-server/Dockerfile
+    image: mcp-saas-starter-mcp
+    ports:
+      - '3001:3001'
+    env_file:
+      - .env.local
+    environment:
+      HOST: '0.0.0.0'
+      PORT: '3001'
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    profiles: ['redis']
+    restart: unless-stopped

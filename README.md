@@ -136,7 +136,7 @@ Every tool call and resource read writes an `mcp_audit_events` row, including fa
 
 ## Deployment
 
-Run the web app and the MCP server as two Node processes in front of the same Supabase project. Any host works. See [docs/deployment.md](docs/deployment.md).
+Run the web app and the MCP server as two Node processes in front of the same Supabase project. Any host works. See [docs/deployment.md](docs/deployment.md). To ship the MCP server as a container, see [docs/docker.md](docs/docker.md).
 
 ## Security considerations
 
