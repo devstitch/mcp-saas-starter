@@ -235,4 +235,4 @@ New tools should follow [docs/adding-tools.md](docs/adding-tools.md): schema, do
 
 DevStitch helps founders and startup teams turn AI-assisted prototypes and early SaaS products into secure, production-ready platforms, including AI features, MCP integrations and scalable application architecture.
 
-[DevStitch](https://devstitch.example) — replace this placeholder with the live site.
+[DevStitch](https://devstitch.com/)
