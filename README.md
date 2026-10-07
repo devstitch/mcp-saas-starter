@@ -33,8 +33,6 @@ The Next.js app (`apps/web`) is the same SaaS: login, consent, projects, approva
 
 Details: [docs/architecture.md](docs/architecture.md).
 
-
-
 ## Features
 
 - Streamable HTTP MCP server with eight tools and two resources (`project://{projectId}`, `organization://current`)
