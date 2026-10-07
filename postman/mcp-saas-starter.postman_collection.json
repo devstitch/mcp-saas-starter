@@ -1,0 +1,646 @@
+{
+  "info": {
+    "_postman_id": "b7e1c4a2-6f3d-4c8e-9a1b-2d5e8f0c4a77",
+    "name": "MCP SaaS Starter",
+    "description": "Local calls against the MCP server and a Supabase password grant so Postman can act as a demo user.\n\nMCP clients (Cursor, Claude, ChatGPT) use OAuth 2.1 + PKCE and the web consent page. The password grant here is only so this collection can obtain a user JWT.\n\nSetup:\n1. Import the local environment and select it.\n2. Set supabaseUrl and supabasePublishableKey from .env.local.\n3. Start the MCP server (pnpm dev or pnpm --filter @mcp-saas-starter/mcp-server dev).\n4. Run Health, then Sign in as Acme admin, then the MCP requests.\n\nList projects saves projectId. List tasks saves taskId. Sign-in saves accessToken and assigneeId.\n\n/mcp responses may be JSON or a text/event-stream data line. Tests accept both.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "mcpBaseUrl", "value": "http://127.0.0.1:3001" },
+    { "key": "supabaseUrl", "value": "https://YOUR_PROJECT.supabase.co" },
+    { "key": "supabasePublishableKey", "value": "" },
+    { "key": "demoEmail", "value": "admin@acme.example.com" },
+    { "key": "demoPassword", "value": "Password123!" },
+    { "key": "accessToken", "value": "" },
+    { "key": "projectId", "value": "" },
+    { "key": "taskId", "value": "" },
+    { "key": "assigneeId", "value": "" },
+    { "key": "protocolVersion", "value": "2025-06-18" }
+  ],
+  "item": [
+    {
+      "name": "Health and discovery",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{mcpBaseUrl}}/health",
+            "description": "Public. Expect status ok, toolsRegistered 8, resourcesRegistered 2."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('health is ok', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('ok');",
+                  "  pm.expect(body.transport).to.eql('streamable-http');",
+                  "  pm.expect(body.toolsRegistered).to.eql(8);",
+                  "  pm.expect(body.resourcesRegistered).to.eql(2);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Protected resource metadata",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{mcpBaseUrl}}/.well-known/oauth-protected-resource/mcp",
+            "description": "What an MCP client reads after a 401 on /mcp."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('protected resource metadata', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.resource).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Authorization server metadata",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{mcpBaseUrl}}/.well-known/oauth-authorization-server",
+            "description": "Republished Supabase OAuth metadata. The MCP process is not the authorization server."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('authorization server metadata', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.authorization_endpoint).to.be.a('string');",
+                  "  pm.expect(body.token_endpoint).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sign in",
+      "item": [
+        {
+          "name": "Sign in as Acme admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "apikey", "value": "{{supabasePublishableKey}}" },
+              { "key": "Authorization", "value": "Bearer {{supabasePublishableKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{demoEmail}}\",\n  \"password\": \"{{demoPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{supabaseUrl}}/auth/v1/token?grant_type=password",
+            "description": "Password grant for the seeded Acme admin. Saves accessToken and assigneeId (the user id). Change demoEmail to member@acme.example.com or viewer@acme.example.com to exercise other roles. MCP clients should use OAuth 2.1 + PKCE instead of this request."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "  pm.collectionVariables.set(key, value);",
+                  "  try { pm.environment.set(key, value); } catch (error) {}",
+                  "}",
+                  "",
+                  "pm.test('password grant returns an access token', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.access_token).to.be.a('string').and.not.empty;",
+                  "  save('accessToken', body.access_token);",
+                  "  if (body.user && body.user.id) save('assigneeId', body.user.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MCP session",
+      "item": [
+        {
+          "name": "Initialize",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"initialize\",\n  \"params\": {\n    \"protocolVersion\": \"{{protocolVersion}}\",\n    \"capabilities\": {},\n    \"clientInfo\": {\n      \"name\": \"postman\",\n      \"version\": \"1.0.0\"\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "JSON-RPC initialize. The server is stateless, so later tool calls do not depend on a session id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('initialize succeeds', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.text()).to.include('serverInfo');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Initialized notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"notifications/initialized\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "Client notification. No id, so there is no JSON-RPC result. A 202 or 200 with an empty body is fine."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('notification is accepted', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 202]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List tools",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"method\": \"tools/list\",\n  \"params\": {}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('tools/list includes delete_task', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.text()).to.include('delete_task');",
+                  "  pm.expect(pm.response.text()).to.include('list_projects');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List resources",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 3,\n  \"method\": \"resources/list\",\n  \"params\": {}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp"
+          }
+        },
+        {
+          "name": "List resource templates",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 4,\n  \"method\": \"resources/templates/list\",\n  \"params\": {}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "project://{projectId} is a template. organization://current is a fixed resource."
+          }
+        },
+        {
+          "name": "Call without a token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"initialize\",\n  \"params\": {}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "Expect 401 and a WWW-Authenticate challenge pointing at the protected-resource metadata."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('missing token is rejected', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "  pm.expect(pm.response.headers.get('WWW-Authenticate') || '').to.not.eql('');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tools",
+      "item": [
+        {
+          "name": "List projects",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 10,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"list_projects\",\n    \"arguments\": {\n      \"limit\": 20\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "Saves projectId from the first project in the signed-in organization."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function saveVar(key, value) {",
+                  "  pm.collectionVariables.set(key, value);",
+                  "  try { pm.environment.set(key, value); } catch (error) {}",
+                  "}",
+                  "function mcpMessage(text) {",
+                  "  const trimmed = (text || '').trim();",
+                  "  if (!trimmed) return null;",
+                  "  if (trimmed.startsWith('{') || trimmed.startsWith('[')) return JSON.parse(trimmed);",
+                  "  const dataLine = trimmed.split(/\\r?\\n/).filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).filter(Boolean).pop();",
+                  "  return dataLine ? JSON.parse(dataLine) : null;",
+                  "}",
+                  "function toolJson(message) {",
+                  "  const text = message && message.result && message.result.content && message.result.content[0] && message.result.content[0].text;",
+                  "  if (!text) return null;",
+                  "  try { return JSON.parse(text); } catch (error) { return null; }",
+                  "}",
+                  "const projects = toolJson(mcpMessage(pm.response.text()));",
+                  "pm.test('list_projects returns projects', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(projects).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "if (Array.isArray(projects) && projects[0] && projects[0].id) {",
+                  "  saveVar('projectId', projects[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get project",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 11,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_project\",\n    \"arguments\": {\n      \"projectId\": \"{{projectId}}\"\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp"
+          }
+        },
+        {
+          "name": "List tasks",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 12,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"list_tasks\",\n    \"arguments\": {\n      \"projectId\": \"{{projectId}}\"\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "Saves taskId from the first task. Optional status filter: todo, in_progress, blocked, done."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function saveVar(key, value) {",
+                  "  pm.collectionVariables.set(key, value);",
+                  "  try { pm.environment.set(key, value); } catch (error) {}",
+                  "}",
+                  "function mcpMessage(text) {",
+                  "  const trimmed = (text || '').trim();",
+                  "  if (!trimmed) return null;",
+                  "  if (trimmed.startsWith('{') || trimmed.startsWith('[')) return JSON.parse(trimmed);",
+                  "  const dataLine = trimmed.split(/\\r?\\n/).filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).filter(Boolean).pop();",
+                  "  return dataLine ? JSON.parse(dataLine) : null;",
+                  "}",
+                  "function toolJson(message) {",
+                  "  const text = message && message.result && message.result.content && message.result.content[0] && message.result.content[0].text;",
+                  "  if (!text) return null;",
+                  "  try { return JSON.parse(text); } catch (error) { return null; }",
+                  "}",
+                  "const tasks = toolJson(mcpMessage(pm.response.text()));",
+                  "pm.test('list_tasks returns tasks', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(tasks).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "if (Array.isArray(tasks) && tasks[0] && tasks[0].id) {",
+                  "  saveVar('taskId', tasks[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 13,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_task\",\n    \"arguments\": {\n      \"taskId\": \"{{taskId}}\"\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp"
+          }
+        },
+        {
+          "name": "Create task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 14,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"create_task\",\n    \"arguments\": {\n      \"projectId\": \"{{projectId}}\",\n      \"title\": \"Postman task\",\n      \"description\": \"Created from the MCP SaaS Starter collection.\"\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "Member or admin. A viewer is denied. Saves the new task id into taskId."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function saveVar(key, value) {",
+                  "  pm.collectionVariables.set(key, value);",
+                  "  try { pm.environment.set(key, value); } catch (error) {}",
+                  "}",
+                  "function mcpMessage(text) {",
+                  "  const trimmed = (text || '').trim();",
+                  "  if (!trimmed) return null;",
+                  "  if (trimmed.startsWith('{') || trimmed.startsWith('[')) return JSON.parse(trimmed);",
+                  "  const dataLine = trimmed.split(/\\r?\\n/).filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).filter(Boolean).pop();",
+                  "  return dataLine ? JSON.parse(dataLine) : null;",
+                  "}",
+                  "function toolJson(message) {",
+                  "  const text = message && message.result && message.result.content && message.result.content[0] && message.result.content[0].text;",
+                  "  if (!text) return null;",
+                  "  try { return JSON.parse(text); } catch (error) { return null; }",
+                  "}",
+                  "const created = toolJson(mcpMessage(pm.response.text()));",
+                  "pm.test('create_task returns a task', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(created).to.be.an('object');",
+                  "  pm.expect(created.id).to.be.a('string');",
+                  "});",
+                  "if (created && created.id) saveVar('taskId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 15,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"update_task\",\n    \"arguments\": {\n      \"taskId\": \"{{taskId}}\",\n      \"title\": \"Postman task (updated)\",\n      \"status\": \"in_progress\"\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "At least one of title, description, status, or assigneeId is required. status must be a permitted transition from the current value. A new task starts as todo, so in_progress is valid."
+          }
+        },
+        {
+          "name": "Assign task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 16,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"assign_task\",\n    \"arguments\": {\n      \"taskId\": \"{{taskId}}\",\n      \"assigneeId\": \"{{assigneeId}}\"\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "assigneeId must be a member of the same organization. Sign-in stores the signed-in user id."
+          }
+        },
+        {
+          "name": "Delete task (pending approval)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 17,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"delete_task\",\n    \"arguments\": {\n      \"taskId\": \"{{taskId}}\"\n    }\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "Admin only. Does not delete the task. Returns pending_approval. Approve or reject it in the web app at /dashboard/approvals. Members and viewers are denied and no pending row is created."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function mcpMessage(text) {",
+                  "  const trimmed = (text || '').trim();",
+                  "  if (!trimmed) return null;",
+                  "  if (trimmed.startsWith('{') || trimmed.startsWith('[')) return JSON.parse(trimmed);",
+                  "  const dataLine = trimmed.split(/\\r?\\n/).filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).filter(Boolean).pop();",
+                  "  return dataLine ? JSON.parse(dataLine) : null;",
+                  "}",
+                  "function toolJson(message) {",
+                  "  const text = message && message.result && message.result.content && message.result.content[0] && message.result.content[0].text;",
+                  "  if (!text) return null;",
+                  "  try { return JSON.parse(text); } catch (error) { return null; }",
+                  "}",
+                  "const result = toolJson(mcpMessage(pm.response.text()));",
+                  "pm.test('delete stays pending', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(result.status).to.eql('pending_approval');",
+                  "  pm.expect(result.protectedActionId).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Resources",
+      "item": [
+        {
+          "name": "Read current organization",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 20,\n  \"method\": \"resources/read\",\n  \"params\": {\n    \"uri\": \"organization://current\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "Name, member count, and project count. No member emails."
+          }
+        },
+        {
+          "name": "Read project",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json, text/event-stream" },
+              { "key": "MCP-Protocol-Version", "value": "{{protocolVersion}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 21,\n  \"method\": \"resources/read\",\n  \"params\": {\n    \"uri\": \"project://{{projectId}}\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{mcpBaseUrl}}/mcp",
+            "description": "Name, description, status, and task count for projectId."
+          }
+        }
+      ]
+    }
+  ]
+}
