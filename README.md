@@ -33,17 +33,7 @@ The Next.js app (`apps/web`) is the same SaaS: login, consent, projects, approva
 
 Details: [docs/architecture.md](docs/architecture.md).
 
-## Demo/screenshots
 
-Real screenshots are not in the repo yet. Add them at the paths below. See [docs/images/README.md](docs/images/README.md).
-
-![Sign in](docs/images/login.png)
-
-![Projects](docs/images/projects.png)
-
-![Pending approvals](docs/images/approvals.png)
-
-![Agent activity](docs/images/agent-activity.png)
 
 ## Features
 
