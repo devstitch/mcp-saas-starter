@@ -45,6 +45,10 @@ RATE_LIMIT_STORE=redis
 RATE_LIMIT_REDIS_URL=redis://<host>:6379
 ```
 
+## Docker
+
+The MCP server has its own image and Compose file. The web app stays a separate process. See [docs/docker.md](docs/docker.md).
+
 ## Checks after deploy
 
 - `GET /health` on the MCP server returns `toolsRegistered` and `resourcesRegistered`

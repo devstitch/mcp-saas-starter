@@ -1,0 +1,17 @@
+.git
+.github
+.turbo
+.vercel
+node_modules
+**/node_modules
+dist
+**/dist
+.next
+coverage
+*.log
+.env
+.env.*
+!.env.example
+docs
+*.md
+agent-transcripts
